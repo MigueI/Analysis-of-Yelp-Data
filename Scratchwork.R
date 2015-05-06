@@ -37,13 +37,14 @@ ggplot(yelpdata, aes(as.factor(stars))) +
 
 # If the third hypothesis were true, we'd expect to have a large number of restuarants with high ratings
 # that have been around for awhile. However, when we do plot of the number of restaurants with a specific
-# number of reviews. (We assume that ratings is proportional to reviews, here.)
+# number of reviews. (We assume that number of ratings is proportional to number of reviews.)
 ggplot(yelpdata, aes(review_count)) + 
   geom_histogram() + 
   scale_x_log10()
 
+filter(yelpdata, review_count > 4000) 
 
-ggplot(yelpdata, aes(as.factor(stars), as.numeric(as.character(review_count)))) + 
+ggplot(yelpdata, aes(as.factor(stars), review_count)) + 
   geom_boxplot() + 
   scale_y_log10()
 

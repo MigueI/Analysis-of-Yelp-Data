@@ -1,0 +1,95 @@
+---
+title: "Yelp Data Analysis"
+output: html_document
+---
+
+In this analysis, my goal is to see how various non-food factors affect yelp reviews. 
+
+We'll start by looking at restaurant ratings on yelp. Then, we'll see how specific attributes of restaurants affect the ratings. Finally, I'll make a predictive model using these attributes as inputs. We'll train the model with the first half of the data set, and test it using the second half of the data set to see how accurate the model is.
+
+```{r, echo=FALSE, message=FALSE}
+library(rjson)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+```
+
+```{r, echo=FALSE}
+# --------------------------------------------------------------------------------------------------------
+# The following makes the .json file a .rdata file. Once the .rdata file has been created, we don't need
+# the code anymore.
+# --------------------------------------------------------------------------------------------------------
+
+# Open file, read all the lines, then close the file.
+# con <- file("yelp_academic_dataset_business.json", "r")
+# input <- readLines(con, -1L)
+# close(con)
+
+# Extract each json object (i.e. a single buisiness) from the read file,
+# and make it a row of a data frame.
+# yelpdata <- input %>%
+#   lapply(function(x) t(unlist(fromJSON(x)))) %>% 
+#   ldply()
+# save(yelpdata, file= 'yelpdata.rdata')
+```
+
+```{r, echo=FALSE}
+# Load the data.
+load("yelpdata.rdata")
+
+# Modify data. 
+yelpdata$stars <- as.numeric(as.character(yelpdata$stars))
+yelpdata$review_count <- as.numeric(as.character(yelpdata$review_count))
+
+chinese <- filter(yelpdata, categories1 == "Chinese" & categories2 == "Restaurants") 
+all_restaurants <- filter(yelpdata, categories1 == "Restaurants" | 
+                     categories2 == "Restaurants"| 
+                     categories3 == "Restaurants"|
+                     categories4 == "Restaurants"|
+                     categories5 == "Restaurants"|
+                     categories6 == "Restaurants"|
+                     categories7 == "Restaurants") 
+```
+
+## Data Exploration - Restaurants
+
+Let's look at the overall number of restaurants by rating. Naively we'd expect a normal distribution, but the plot shows a right skew. We can expect that (1) people like going to and reviewing good restaurants, (2) as a result better restaurants tend to stick around and the bad ones tend to close, and (3) people may not be rating "normal"-y.
+
+```{r, echo=FALSE}
+ggplot(all_restaurants, aes(as.factor(stars))) + 
+  geom_histogram()
+```
+
+What do we expect to see in a plot comparing the number of restaurants with the number of reviews each restaurant recieved?
+
+If (1) were true, we'd expect to have a large number of restuarants with high ratings
+that have been around for a while.
+
+```{r, echo=FALSE}
+ggplot(all_restaurants, aes(review_count)) + 
+  geom_histogram(binwidth = .15) + 
+  scale_x_log10()
+```
+
+Also, this plot seems to support (1) and (2), since there seem to be quite a few restaurants with low reviews.
+
+```{r,echo = FALSE}
+ggplot(all_restaurants, aes(review_count, fill=as.factor(stars))) + 
+  geom_histogram(binwidth = .15) + 
+  facet_wrap(~ stars) +
+  scale_x_log10()
+```
+
+For the most part, the left skewed distribution seems relatively consistent for all ratings. As we go from 1 star restaurants to 4 star restaurants though, we see that the peak of the skewed distribution keeps moving to the right, indicating that there are more reviews for better rated restaurants. However, for restaurants of 4.5 and 5 stars, the peak scoots back to the left. We can get a sense of this by looking at the mean number of reviews by star rating.
+
+```{r kable, echo=FALSE,out.width=4}
+dt <- all_restaurants %>% 
+  group_by(stars) %>%
+  summarise(avg_num_rev = round(mean(review_count), digits =  2)) %>%
+  tbl_df()
+
+kable(dt, align  = "c")
+```
+
+What can we make of the low mean number of reviews for 5 star restaurants? Perhaps that most 5 star restaurants are recieve that rating by chance; with a small sample size of 3 or 4 reviews, there will inevitably be a few restaurants that are rated 5 stars for each of those reviews. As the sample size (number of reviews) increases, the yelp rating will begin to approach this restaurants "true" rating, which will most likely not be 5 stars. 
