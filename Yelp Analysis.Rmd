@@ -42,6 +42,25 @@ load("yelpdata.rdata")
 yelpdata$stars <- as.numeric(as.character(yelpdata$stars))
 yelpdata$review_count <- as.numeric(as.character(yelpdata$review_count))
 
+# Make city/state column to consolidate and clarify vague city and state labels.
+yelpdata <- mutate(yelpdata, cityst = ifelse(yelpdata$state=="NV", "Las Vegas, NV",
+                                        ifelse(yelpdata$state=="PA", "Pittsburg, PA",
+                                          ifelse(yelpdata$state=="NC", "Charlotte, NC",
+                                            ifelse(yelpdata$state=="AZ", "Phoenix, AZ",
+                                              ifelse(yelpdata$state=="IL", "Urbana-Champaign, IL",
+                                                ifelse(yelpdata$state=="WI", "Madison, WI",
+                                                  ifelse(yelpdata$state=="MLN", "Edinburgh, UK",
+                                                    ifelse(yelpdata$state=="BW", "Karlsruhe, Germany",
+                                                      ifelse(yelpdata$state=="QC", "Montreal, Canada",  
+                                                       ifelse(yelpdata$state=="ON", "Waterloo, Canada",
+                                                        ifelse(yelpdata$state=="SC", "Fort Mill, SC",
+                                                         ifelse(yelpdata$state=="EDH", "Edinburgh, UK",
+                                                          ifelse(yelpdata$state=="KHL", "Edinburgh, UK",
+                                                           ifelse(yelpdata$state=="XGL", "Edinburgh, UK",
+                                                            ifelse(yelpdata$state=="NTH", "Edinburgh, UK",
+                                                            ifelse(yelpdata$state=="SCB", "Edinburgh, UK",
+                                                         NA)))))))))))))))))
+
 chinese <- filter(yelpdata, categories1 == "Chinese" & categories2 == "Restaurants") 
 all_restaurants <- filter(yelpdata, categories1 == "Restaurants" | 
                      categories2 == "Restaurants"| 
@@ -52,13 +71,15 @@ all_restaurants <- filter(yelpdata, categories1 == "Restaurants" |
                      categories7 == "Restaurants") 
 ```
 
-## Data Exploration - Restaurants
-
+## Data Exploration - Restaurant Star Ratings
+ 
 Let's look at the overall number of restaurants by rating. Naively we'd expect a normal distribution, but the plot shows a right skew. We can expect that (1) people like going to and reviewing good restaurants, (2) as a result better restaurants tend to stick around and the bad ones tend to close, and (3) people may not be rating "normal"-y.
 
 ```{r, echo=FALSE}
 ggplot(all_restaurants, aes(as.factor(stars))) + 
-  geom_histogram()
+  geom_histogram() +
+  xlab("Stars") +
+  ylab("Number of Restaurants")
 ```
 
 What do we expect to see in a plot comparing the number of restaurants with the number of reviews each restaurant recieved?
@@ -69,27 +90,92 @@ that have been around for a while.
 ```{r, echo=FALSE}
 ggplot(all_restaurants, aes(review_count)) + 
   geom_histogram(binwidth = .15) + 
-  scale_x_log10()
+  scale_x_log10() +
+  xlab("Number of Reviews") +
+  ylab("Number of Restaurants")
 ```
 
 Also, this plot seems to support (1) and (2), since there seem to be quite a few restaurants with low reviews.
 
 ```{r,echo = FALSE}
-ggplot(all_restaurants, aes(review_count, fill=as.factor(stars))) + 
+ggplot(all_restaurants, aes(review_count)) + 
   geom_histogram(binwidth = .15) + 
+  scale_x_log10() +
   facet_wrap(~ stars) +
-  scale_x_log10()
+  xlab("Number of Reviews") +
+  ylab("Number of Restaurants")
 ```
 
-For the most part, the left skewed distribution seems relatively consistent for all ratings. As we go from 1 star restaurants to 4 star restaurants though, we see that the peak of the skewed distribution keeps moving to the right, indicating that there are more reviews for better rated restaurants. However, for restaurants of 4.5 and 5 stars, the peak scoots back to the left. We can get a sense of this by looking at the mean number of reviews by star rating.
+For the most part, the left skewed distribution seems relatively consistent for all ratings. As we go from 1 star restaurants to 4 star restaurants though, we see that the peak of the skewed distribution keeps moving to the right, indicating that there are more reviews for better rated restaurants. However, for restaurants of 4.5 and 5 stars, the peak scoots back to the left. We can get a sense of this by looking at a boxplot of the number of reviews by star rating.
 
-```{r kable, echo=FALSE,out.width=4}
-dt <- all_restaurants %>% 
-  group_by(stars) %>%
-  summarise(avg_num_rev = round(mean(review_count), digits =  2)) %>%
+
+```{r, echo=FALSE}
+ggplot(all_restaurants, aes(as.factor(stars), review_count)) + 
+  geom_boxplot() +
+  scale_y_log10() +
+  xlab("Stars") +
+  ylab("Number of Reviews")
+
+#dt <- all_restaurants %>% 
+#  group_by(stars) %>%
+#  summarise(avg_num_rev = round(mean(review_count), digits =  2)) %>%
+#  tbl_df()
+
+#kable(dt, align  = "c")
+```
+
+What can we make of the low mean number of reviews for 5 star restaurants? Perhaps that most 5 star restaurants are recieve that rating by chance; with a small sample size of 3 or 4 reviews, there will inevitably be a few restaurants that are rated 5 stars for each of those reviews. As the sample size (number of reviews) increases, the yelp rating will begin to approach this restaurants "true" rating, which will most likely not be 5 stars. The same probably occurs for 1 star restaurants as well, but there is an added consequence: if you are a 1 star restaurant, you probably won't be open for very long...
+
+Finally, let's just see what cities have the best ratings. 
+
+```{r, echo=FALSE}
+dstate <- all_restaurants %>%
+  group_by(cityst) %>%
+  summarise(avg_stars = round(mean(stars), digits =  2), 
+            avg_num_rev = round(mean(review_count), digits =  2),
+            num_rest = n()) %>%
   tbl_df()
 
-kable(dt, align  = "c")
+dstate <- dstate[order(-dstate$avg_stars),]
+
+kable(dstate, align  = "c")
 ```
 
-What can we make of the low mean number of reviews for 5 star restaurants? Perhaps that most 5 star restaurants are recieve that rating by chance; with a small sample size of 3 or 4 reviews, there will inevitably be a few restaurants that are rated 5 stars for each of those reviews. As the sample size (number of reviews) increases, the yelp rating will begin to approach this restaurants "true" rating, which will most likely not be 5 stars. 
+## Parameters
+
+```{r, echo=FALSE}
+names(yelpdata)
+
+"attributes.Accepts Credit Cards"                     
+"attributes.Good For Groups"                          
+ "attributes.Outdoor Seating"                          
+ "attributes.Price Range"                              
+"categories3"                                         
+"attributes.Good for Kids"
+"attributes.Alcohol"                                  
+"attributes.Noise Level"                              
+"attributes.Has TV"                                   
+"attributes.Attire"
+"attributes.Good For Dancing"                         
+"attributes.Delivery"                                 
+"attributes.Coat Check"                               
+"attributes.Smoking"                                  
+ [57] "attributes.Take-out"                                 
+ [58] "attributes.Takes Reservations"                       
+ [59] "attributes.Waiter Service"                           
+ [60] "attributes.Wi-Fi"                                    
+ [61] "attributes.Caters"                                   
+ [62] "attributes.Good For.dessert"                         
+ [63] "attributes.Good For.latenight"                       
+ [64] "attributes.Good For.lunch"                           
+ [65] "attributes.Good For.dinner"                          
+ [66] "attributes.Good For.breakfast"                       
+ [67] "attributes.Good For.brunch"                          
+ [68] "attributes.Parking.garage"                           
+ [69] "attributes.Parking.street"                           
+ [70] "attributes.Parking.validated"                        
+ [71] "attributes.Parking.lot"                              
+ [72] "attributes.Parking.valet"
+
+```
+
