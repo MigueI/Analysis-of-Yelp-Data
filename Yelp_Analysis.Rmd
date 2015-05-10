@@ -14,6 +14,7 @@ library(dplyr)
 library(ggplot2)
 library(knitr)
 library(glmnet)
+library(googleVis)
 ```
 
 ```{r, echo=FALSE}
@@ -35,7 +36,7 @@ library(glmnet)
 # save(yelpdata, file= 'yelpdata.rdata')
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.align='center'}
 # Load the data.
 load("yelpdata.rdata")
 
@@ -81,8 +82,6 @@ names(yelpdata)[names(yelpdata)=="attributeswifi"] <- "wifi"
 names(yelpdata)[names(yelpdata)=="attributesattire"] <- "attire"
 names(yelpdata)[names(yelpdata)=="attributeshastv "] <- "tv"
 
-
-
 # Change <NA> to "dnr" (did not respond).
 addDNR <- function(x){
   if(is.factor(x)) return(factor(x, levels=c(levels(x), "dnr")))
@@ -102,7 +101,7 @@ yelpdata <- mutate(yelpdata, loc = ifelse(yelpdata$state=="NV", "Las Vegas, NV",
                                                     ifelse(yelpdata$state=="BW", "Karlsruhe, Germany",
                                                       ifelse(yelpdata$state=="QC", "Montreal, Canada",  
                                                        ifelse(yelpdata$state=="ON", "Waterloo, Canada",
-                                                        ifelse(yelpdata$state=="SC", "Fort Mill, SC",
+                                                        ifelse(yelpdata$state=="SC", "Charlotte, NC",
                                                          ifelse(yelpdata$state=="EDH", "Edinburgh, UK",
                                                           ifelse(yelpdata$state=="KHL", "Edinburgh, UK",
                                                            ifelse(yelpdata$state=="XGL", "Edinburgh, UK",
@@ -110,7 +109,6 @@ yelpdata <- mutate(yelpdata, loc = ifelse(yelpdata$state=="NV", "Las Vegas, NV",
                                                             ifelse(yelpdata$state=="SCB", "Edinburgh, UK",
                                                          NA)))))))))))))))))
 
-chinese <- filter(yelpdata, categories1 == "Chinese" & categories2 == "Restaurants") 
 all_restaurants <- filter(yelpdata, categories == "Restaurants" |
                      categories1 == "Restaurants" | 
                      categories2 == "Restaurants"| 
@@ -125,7 +123,7 @@ all_restaurants <- filter(yelpdata, categories == "Restaurants" |
  
 Let's look at the overall number of restaurants by rating. Naively we'd expect a normal distribution, but the plot shows a right skew. We can expect that (1) people like going to and reviewing good restaurants, (2) as a result better restaurants tend to stick around and the bad ones tend to close, and (3) people may not be rating "normal"-y.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.align='center'}
 ggplot(all_restaurants, aes(as.factor(stars))) + 
   geom_histogram() +
   xlab("Stars") +
@@ -137,7 +135,7 @@ What do we expect to see in a plot comparing the number of restaurants with the 
 If (1) were true, we'd expect to have a large number of restuarants with high ratings
 that have been around for a while.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.align='center'}
 ggplot(all_restaurants, aes(reviewcount)) + 
   geom_histogram(binwidth = .15) + 
   scale_x_log10() +
@@ -147,7 +145,7 @@ ggplot(all_restaurants, aes(reviewcount)) +
 
 Also, this plot seems to support (1) and (2), since there seem to be quite a few restaurants with low reviews.
 
-```{r,echo = FALSE}
+```{r,echo = FALSE, fig.align='center'}
 ggplot(all_restaurants, aes(reviewcount)) + 
   geom_histogram(binwidth = .15) + 
   scale_x_log10() +
@@ -159,7 +157,7 @@ ggplot(all_restaurants, aes(reviewcount)) +
 For the most part, the left skewed distribution seems relatively consistent for all ratings. As we go from 1 star restaurants to 4 star restaurants though, we see that the peak of the skewed distribution keeps moving to the right, indicating that there are more reviews for better rated restaurants. However, for restaurants of 4.5 and 5 stars, the peak scoots back to the left. We can get a sense of this by looking at a boxplot of the number of reviews by star rating.
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.align='center'}
 ggplot(all_restaurants, aes(as.factor(stars), reviewcount)) + 
   geom_boxplot() +
   scale_y_log10() +
@@ -176,9 +174,48 @@ ggplot(all_restaurants, aes(as.factor(stars), reviewcount)) +
 
 What can we make of the low mean number of reviews for 5 star restaurants? Perhaps that most 5 star restaurants are recieve that rating by chance; with a small sample size of 3 or 4 reviews, there will inevitably be a few restaurants that are rated 5 stars for each of those reviews. As the sample size (number of reviews) increases, the yelp rating will begin to approach this restaurants "true" rating, which will most likely not be 5 stars. The same probably occurs for 1 star restaurants as well, but there is an added consequence: if you are a 1 star restaurant, you probably won't be open for very long...
 
+## Data Exploration - By City
+
+Where is our data coming from?
+
+```{r results="asis", echo=FALSE, fig.align='center', warning=FALSE}
+# Massage data for map.
+all_restaurants$latlong <- paste(all_restaurants$latitude, all_restaurants$longitude, sep=":")
+counts <- all_restaurants %>% 
+  group_by(loc) %>%
+  summarize(count = n(),  avg_rating = round(mean(stars),2))
+
+locdata <- data.frame(latlong = all_restaurants$latlong, 
+                      loc = all_restaurants$loc)
+
+counts <- inner_join(counts, locdata, by="loc") %>%
+  group_by(loc) %>%
+  summarize(count = first(count), 
+            latlong = first(latlong),
+            avg_rating = first(avg_rating))
+
+require(datasets)
+
+USmap <- gvisGeoChart(counts, "loc", 
+                          sizevar="count",
+                          colorvar="avg_rating", 
+                          options=list(region = 'US',
+                                       displayMode = "markers",
+                                       colorAxis="{colors:['white', 'red']}"))
+
+Europemap <- gvisGeoChart(counts, "loc", 
+                          sizevar = "count",
+                          colorvar = "avg_rating", 
+                          options=list(region = '150',
+                                       displayMode = "markers",
+                                       colorAxis="{colors:['white', 'red']}"))
+
+plot(gvisMerge(USmap, Europemap, horizontal=TRUE))
+```
+
 Finally, let's just see what cities have the best ratings. 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.align='center'}
 dstate <- all_restaurants %>%
   group_by(loc) %>%
   summarise(avg_stars = round(mean(stars), digits =  2), 
@@ -211,7 +248,7 @@ As predictors, we'll most of the relevant variables included for \textit{restaur
 
 We'll examine the accuracy of this model by splitting the data set in half. The first half will be used to train the model that will be tested on the second half. 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE,  fig.align='center'}
 # Make dataset with predictors.
 dataset <- all_restaurants %>%
   select(stars,
@@ -268,7 +305,7 @@ The key variables are the ones that ``jump out" early on.
 
 Below we see the change in Mean-Squared Error ($\frac{1}{k}\sum{(y-\hat{y})^2}$) as a function of a changing $s$ (which is proportional to the $log(\lambda)$ at the bottom of the x-axis). The top of the x-axis shows the number of variables included in the model. We find the ideal $s$ value at the dip, where the mean-square value is the lowest.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.align='center'}
 set.seed(1)
 cv.out <- cv.glmnet(x[train,], y[train], alpha=1)
 plot(cv.out)
