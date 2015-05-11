@@ -1,13 +1,15 @@
 ---
 title: "Yelp Data Analysis"
-output: html_document
+output:
+  html_document:
+    keep_md: yes
 ---
 
 ## Motivation
 
 We've all been there. It's 7:00 PM, you're in an unfamiliar part of town with some friends, and everyone's hungry but nobody can decide where to eat. Everyone pulls out their phones to see what's nearby, but being the snobs you are, you guys can't just pick any restaurant. You need something solid. At the very least 4 stars. Eventually you narrow it down to a couple of 4 star restaurants and one 4.5 star restaurant. In the end, you all go with the 4.5 star restaurant, since it's presumably the best. 
 
-In our review-obsessed culture, we often look to the internet for decisions. When findng a place to eat, we want a single number that makes our decision easy. But at the end of the day, what is the difference between a 4 star restaurant and a 4.5 star restauarant? We'd assume that the quality of food is central to this rating, but what other factors play a role in a restaurants rating? In this analysis, my goal is to make a linear model to see how various attributes of a restaurant affect it's ratings on Yelp. Ideally, this information could be used to help restaurant owners discover what sorts of attributes will make the customers experience better.
+In our review-obsessed culture, we often look to the internet for decisions. When finding a place to eat, we want a single number that makes our decision easy. But at the end of the day, what is the difference between a 4 star restaurant and a 4.5 star restaurant? We'd assume that the quality of food is central to this rating, but what other factors play a role in a restaurants rating? In this analysis, my goal is to make a linear model to see how various attributes of a restaurant affect it's ratings on Yelp. Ideally, this information could be used to help restaurant owners discover what sorts of attributes will make the customers experience better.
 
 ## Overview
 
@@ -26,7 +28,6 @@ library(knitr)
 library(glmnet)
 library(googleVis)
 library(DT)
-library(MASS)
 library(scales)
 ```
 
@@ -306,7 +307,7 @@ ggplot(all_restaurants, aes(as.factor(stars), reviewcount)) +
   theme_classic()
 ```
 
-What can we make of the low mean number of reviews for 5 star restaurants? Perhaps that most 5 star restaurants are recieve that rating by chance; with a small sample size of 3 or 4 reviews, there will inevitably be a few restaurants that are rated 5 stars for each of those reviews. As the sample size (number of reviews) increases, the yelp rating will begin to approach this restaurants "true" rating, which will most likely not be 5 stars. The same probably occurs for 1 star restaurants as well, but there is an added consequence: if you are a 1 star restaurant, you probably won't be open for very long...
+What can we make of the low mean number of reviews for 5 star restaurants? Perhaps that most 5 star restaurants recieve that rating by chance; with a small sample size of 3 or 4 reviews, there will inevitably be a few restaurants that are rated 5 stars for each of those reviews. As the sample size (number of reviews) increases, the yelp rating will begin to approach this restaurants "true" rating, which will most likely not be 5 stars. The same probably occurs for 1 star restaurants as well, but there is an added consequence: if you are a 1 star restaurant, you probably won't be open for very long...
 
 ## Data Exploration - By City
 
@@ -335,18 +336,20 @@ USmap <- gvisGeoChart(counts, "loc",
                           colorvar="Avg_Rating", 
                           options=list(region = 'US',
                                        displayMode = "markers",
-                                       colorAxis="{colors:['white', 'col="#c41200"']}"))
+                                       colorAxis="{colors:['white', '#c41200']}"))
 
 Europemap <- gvisGeoChart(counts, "loc", 
                           sizevar = "Restaurants",
                           colorvar = "Avg_Rating", 
                           options=list(region = '150',
                                        displayMode = "markers",
-                                       colorAxis="{colors:['white', 'col="#c41200"']}"))
+                                       colorAxis="{colors:['white', '#c41200']}"
+                                       ))
 
-cat("<center>")
-print(gvisMerge(USmap, Europemap, horizontal=FALSE), "chart")
-cat("</center>")
+
+print(gvisMerge(USmap, Europemap, horizontal=TRUE), "chart")
+
+
 ```
 
 Finally, let's get a sense of how the reviews vary by city.
@@ -375,7 +378,7 @@ For the 10 cities given in this model, it would appear that the the average star
 
 ## LASSO Model
 
-Now we want to create a model that uses various bussiness attributes to predict the star rating of a restaurant. 
+Now we want to create a model that uses various business attributes to predict the star rating of a restaurant. 
 
 The LASSO flavor of linear regession (Least Absolute Shrinkage and Selection Operator) involves finding an ideal parameter in order to reduce possibility of overfitting. When fitting a linear regression, we are looking for the values $b_j$ that correspond to inputs $x_j$ and $\hat{y}$:
 
@@ -394,6 +397,7 @@ As predictors, we'll most of the relevant variables included for \textit{restaur
 We'll examine the accuracy of this model by splitting the data set in half. The first half will be used to train the model that will be tested on the second half. 
 
 ```{r, echo=FALSE,  fig.align='center'}
+library(dplyr)
 # Make dataset with predictors.
 dataset <- all_restaurants %>%
   select(businessid,
@@ -435,9 +439,10 @@ dataset <- all_restaurants %>%
          open24hrs,
          amex,
          orderatcounter,
-         visa)
+         visa
+         )
 
-dataset <- left_join(dataset, all_restaurants[c(1,119:length(all_restaurants))], by = "businessid")
+dataset <- left_join(dataset, all_restaurants[c(1,119:(length(all_restaurants)-1))], by = "businessid")
 dataset <- subset(dataset, select = -businessid)
 
 # Define make predictors into a matrix.
@@ -482,7 +487,7 @@ lasso$pred <- predict(lasso.mod, s=bestlam, newx=x[test,])  %>%
 ggplot(lasso, aes(jitter(y.act), pred)) + 
   geom_point() + 
   geom_smooth(method = "lm") + 
-  geom_abline(intercept = 0, colour = "red", size = 2) +
+  geom_abline(intercept = 0, colour = "#c41200", size = 2) +
   coord_cartesian(ylim = c(1,5)) +
   xlab("Actual Star Ratings") +
   ylab("Predicted Star Ratings")
