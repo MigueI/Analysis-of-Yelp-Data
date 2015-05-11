@@ -3,9 +3,19 @@ title: "Yelp Data Analysis"
 output: html_document
 ---
 
-In this analysis, my goal is to see how various non-food factors affect yelp reviews. 
+## Motivation
 
-We'll start by looking at restaurant ratings on yelp. Then, we'll see how specific attributes of restaurants affect the ratings. Finally, I'll make a predictive model using these attributes as inputs. We'll train the model with the first half of the data set, and test it using the second half of the data set to see how accurate the model is.
+We've all been there. It's 7:00 PM, you're in an unfamiliar part of town with some friends, and everyone's hungry but nobody can decide where to eat. Everyone pulls out their phones to see what's nearby, but being the snobs you are, you guys can't just pick any restaurant. You need something solid. At the very least 4 stars. Eventually you narrow it down to a couple of 4 star restaurants and one 4.5 star restaurant. In the end, you all go with the 4.5 star restaurant, since it's presumably the best. 
+
+In our review-obsessed culture, we often look to the internet for decisions. When findng a place to eat, we want a single number that makes our decision easy. But at the end of the day, what is the difference between a 4 star restaurant and a 4.5 star restauarant? We'd assume that the quality of food is central to this rating, but what other factors play a role in a restaurants rating? In this analysis, my goal is to make a linear model to see how various attributes of a restaurant affect it's ratings on Yelp. Ideally, this information could be used to help restaurant owners discover what sorts of attributes will make the customers experience better.
+
+## Overview
+
+We'll start our analysis by looking at the distribution of restaurant ratings. I'll make a predictive LASSO model using these attributes as inputs. We'll train the model with the first half of the data set, and test it using the second half of the data set to see how accurate the model is. Finally, we'll see how specific attributes of restaurants affect the ratings. 
+
+## About Yelp Reviews
+
+On Yelp, registered users give restaurants a rating between 1 and 5 stars, along with a text review consisting of a few sentences. In order to ensure ratings are trustworthy, Yelp only includes ratings that it deems "unbiased" (according to a computer model) so that any rants, reviews from single-review-accounts, and other potentially damaging or flawed reviews are not included in the overall review. (These reviews can still be accessed).
 
 ```{r, echo=FALSE, message=FALSE}
 library(rjson)
@@ -15,6 +25,9 @@ library(ggplot2)
 library(knitr)
 library(glmnet)
 library(googleVis)
+library(DT)
+library(MASS)
+library(scales)
 ```
 
 ```{r, echo=FALSE}
@@ -80,7 +93,23 @@ names(yelpdata)[names(yelpdata)=="attributesgoodfordessert"] <- "desert"
 names(yelpdata)[names(yelpdata)=="attributescaters"] <- "caters"
 names(yelpdata)[names(yelpdata)=="attributeswifi"] <- "wifi"
 names(yelpdata)[names(yelpdata)=="attributesattire"] <- "attire"
-names(yelpdata)[names(yelpdata)=="attributeshastv "] <- "tv"
+
+names(yelpdata)[names(yelpdata)=="attributesgoodforkids"] <- "goodforkids"
+names(yelpdata)[names(yelpdata)=="attributeshastv"] <- "tv"
+names(yelpdata)[names(yelpdata)=="attributesambienceromantic"] <- "romantic"
+names(yelpdata)[names(yelpdata)=="attributesambiencetrendy"] <- "trendy"
+names(yelpdata)[names(yelpdata)=="attributesambienceupscale"] <- "upscale"
+names(yelpdata)[names(yelpdata)=="attributesambiencedivey"] <- "divey"
+names(yelpdata)[names(yelpdata)=="attributeswheelchairaccessible"] <- "wheelchair"
+names(yelpdata)[names(yelpdata)=="attributesmusicbackgroundmusic"] <- "bkgmusic"
+names(yelpdata)[names(yelpdata)=="attributesmusiclive"] <- "livemusic"
+names(yelpdata)[names(yelpdata)=="attributesbyob"] <- "byob"
+names(yelpdata)[names(yelpdata)=="attributesdogsallowed"] <- "dogsallowed"
+names(yelpdata)[names(yelpdata)=="attributesopen24hours"] <- "open24hrs"
+names(yelpdata)[names(yelpdata)=="attributespaymenttypesamex"] <- "amex"
+names(yelpdata)[names(yelpdata)=="attributesorderatcounter"] <- "orderatcounter"
+names(yelpdata)[names(yelpdata)=="attributespaymenttypesvisa"] <- "visa"
+
 
 # Change <NA> to "dnr" (did not respond).
 addDNR <- function(x){
@@ -109,6 +138,7 @@ yelpdata <- mutate(yelpdata, loc = ifelse(yelpdata$state=="NV", "Las Vegas, NV",
                                                             ifelse(yelpdata$state=="SCB", "Edinburgh, UK",
                                                          NA)))))))))))))))))
 
+# Pick out the restaurants.
 all_restaurants <- filter(yelpdata, categories == "Restaurants" |
                      categories1 == "Restaurants" | 
                      categories2 == "Restaurants"| 
@@ -116,42 +146,152 @@ all_restaurants <- filter(yelpdata, categories == "Restaurants" |
                      categories4 == "Restaurants"|
                      categories5 == "Restaurants"|
                      categories6 == "Restaurants"|
-                     categories7 == "Restaurants") 
+                     categories7 == "Restaurants"|
+                     categories8 == "Restaurants"|
+                     categories9 == "Restaurants"|
+                     categories10 == "Restaurants") 
+
+# Display all of the categories of a restaurants from all of the seven columns.
+bigcat <- c(as.character(all_restaurants$categories1), 
+            as.character(all_restaurants$categories2), 
+            as.character(all_restaurants$categories3),
+            as.character(all_restaurants$categories4), 
+            as.character(all_restaurants$categories5), 
+            as.character(all_restaurants$categories6),
+            as.character(all_restaurants$categories7), 
+            as.character(all_restaurants$categories8), 
+            as.character(all_restaurants$categories9),
+            as.character(all_restaurants$categories10),
+            as.character(all_restaurants$categories)) %>% 
+  table() %>% 
+  sort()
+ 
+# Pick the 60 most important categories.
+# tail(bigcat,65)
+
+# This function creates a column for a category, 1 = yes, 0 = no.
+varmaker <- function(x){
+  all_restaurants <- mutate(all_restaurants, 
+                            a = 
+                              ifelse(
+                                categories == x |
+                                categories1 == x | 
+                                categories2 == x | 
+                                categories3 == x | 
+                                categories4 == x | 
+                                categories5 == x | 
+                                categories6 == x | 
+                                categories7 == x | 
+                                categories8 == x | 
+                                categories9 == x | 
+                                categories10 == x , 1, 0) )
+  all_restaurants$a <- as.factor(all_restaurants$a)
+  names(all_restaurants)[names(all_restaurants)=="a"] <- gsub(" ", "", x, fixed = TRUE)
+  return(all_restaurants)
+  }
+
+# Make the new columns.
+all_restaurants <- varmaker("Fast Food")
+all_restaurants <- varmaker("Pizza")
+all_restaurants <- varmaker("Mexican")
+all_restaurants <- varmaker("American (Traditional)")
+all_restaurants <- varmaker("Nightlife")
+all_restaurants <- varmaker("Sandwiches")
+all_restaurants <- varmaker("Bars")
+all_restaurants <- varmaker("Food")
+all_restaurants <- varmaker("Italian")
+all_restaurants <- varmaker("Chinese")
+all_restaurants <- varmaker("American (New)")
+all_restaurants <- varmaker("Burgers")
+all_restaurants <- varmaker("Breakfast & Brunch")
+all_restaurants <- varmaker("Cafes")
+all_restaurants <- varmaker("Japanese")
+all_restaurants <- varmaker("Sushi Bars")
+all_restaurants <- varmaker("Delis")
+all_restaurants <- varmaker("Steakhouses")
+all_restaurants <- varmaker("Seafood")
+all_restaurants <- varmaker("Chicken Wings")
+all_restaurants <- varmaker("Sports Bars")
+all_restaurants <- varmaker("Coffee & Tea")
+all_restaurants <- varmaker("Mediterranean")
+all_restaurants <- varmaker("Barbeque")
+all_restaurants <- varmaker("Thai")
+all_restaurants <- varmaker("Asian Fusion")
+all_restaurants <- varmaker("French")
+all_restaurants <- varmaker("Buffets")
+all_restaurants <- varmaker("Indian")
+all_restaurants <- varmaker("Pubs")
+all_restaurants <- varmaker("Greek")
+all_restaurants <- varmaker("Diners")
+all_restaurants <- varmaker("Bakeries")
+all_restaurants <- varmaker("Vietnamese")
+all_restaurants <- varmaker("Tex-Mex")
+all_restaurants <- varmaker("Vegetarian")
+all_restaurants <- varmaker("Salad")
+all_restaurants <- varmaker("Hot Dogs")
+all_restaurants <- varmaker("Middle Eastern")
+all_restaurants <- varmaker("Event Planning & Services")
+all_restaurants <- varmaker("Specialty Food")
+all_restaurants <- varmaker("Lounges")
+all_restaurants <- varmaker("Korean")
+all_restaurants <- varmaker("Canadian (New)")
+all_restaurants <- varmaker("Arts & Entertainment")
+all_restaurants <- varmaker("Wine Bars")
+all_restaurants <- varmaker("Gluten-Free")
+all_restaurants <- varmaker("Latin American")
+all_restaurants <- varmaker("British")
+all_restaurants <- varmaker("Gastropubs")
+all_restaurants <- varmaker("Ice Cream & Frozen Yogurt")
+all_restaurants <- varmaker("Southern")
+all_restaurants <- varmaker("Vegan")
+all_restaurants <- varmaker("Desserts")
+all_restaurants <- varmaker("Hawaiian")
+all_restaurants <- varmaker("German")
+all_restaurants <- varmaker("Bagels")
+all_restaurants <- varmaker("Caterers")
+all_restaurants <- varmaker("Juice Bars & Smoothies")
+all_restaurants <- varmaker("Fish & Chips")
+all_restaurants <- varmaker("Ethnic Food")
+all_restaurants <- varmaker("Tapas Bars")
+all_restaurants <- varmaker("Soup")
+
+all_restaurants <- varmaker("Halal")
 ```
 
 ## Data Exploration - Restaurant Star Ratings
  
-Let's look at the overall number of restaurants by rating. Naively we'd expect a normal distribution, but the plot shows a right skew. We can expect that (1) people like going to and reviewing good restaurants, (2) as a result better restaurants tend to stick around and the bad ones tend to close, and (3) people may not be rating "normal"-y.
+Let's look at the overall number of restaurants by rating. Naively we'd expect a normal distribution, but the plot shows a right skew. We can expect that (1) better restaurants tend to stick around (and the bad ones tend to close) or that (2) people may not be rating "normal"-y.
 
 ```{r, echo=FALSE, fig.align='center'}
 ggplot(all_restaurants, aes(as.factor(stars))) + 
-  geom_histogram() +
+  geom_histogram(fill = "#c41200", col="black") +
   xlab("Stars") +
-  ylab("Number of Restaurants")
+  ylab("Number of Restaurants") +
+  theme_classic()
 ```
 
-What do we expect to see in a plot comparing the number of restaurants with the number of reviews each restaurant recieved?
-
-If (1) were true, we'd expect to have a large number of restuarants with high ratings
-that have been around for a while.
+We can also look at a histogram of the number of reviews per restaurant. The plot below shows that most tend to have fewer than 10 reviews. The number of restaurants with a certain number of ratings begins to decay as this number of ratings increases.
 
 ```{r, echo=FALSE, fig.align='center'}
 ggplot(all_restaurants, aes(reviewcount)) + 
-  geom_histogram(binwidth = .15) + 
-  scale_x_log10() +
+  geom_histogram(binwidth = .15, fill = "#c41200", col="white") + 
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                   labels = trans_format("log10", math_format(10^.x))) +
   xlab("Number of Reviews") +
-  ylab("Number of Restaurants")
+  ylab("Number of Restaurants") + 
+  theme_classic()
 ```
 
-Also, this plot seems to support (1) and (2), since there seem to be quite a few restaurants with low reviews.
+We can also look to see how this distrubution changes if we divide the plots by star rating.
 
 ```{r,echo = FALSE, fig.align='center'}
 ggplot(all_restaurants, aes(reviewcount)) + 
-  geom_histogram(binwidth = .15) + 
+  geom_histogram(binwidth = .15, fill = "#c41200", col="white") + 
   scale_x_log10() +
   facet_wrap(~ stars) +
   xlab("Number of Reviews") +
-  ylab("Number of Restaurants")
+  ylab("Number of Restaurants") + 
+  theme_classic()
 ```
 
 For the most part, the left skewed distribution seems relatively consistent for all ratings. As we go from 1 star restaurants to 4 star restaurants though, we see that the peak of the skewed distribution keeps moving to the right, indicating that there are more reviews for better rated restaurants. However, for restaurants of 4.5 and 5 stars, the peak scoots back to the left. We can get a sense of this by looking at a boxplot of the number of reviews by star rating.
@@ -159,17 +299,11 @@ For the most part, the left skewed distribution seems relatively consistent for 
 
 ```{r, echo=FALSE, fig.align='center'}
 ggplot(all_restaurants, aes(as.factor(stars), reviewcount)) + 
-  geom_boxplot() +
+  geom_boxplot(col = "#c41200") +
   scale_y_log10() +
   xlab("Stars") +
-  ylab("Number of Reviews")
-
-#dt <- all_restaurants %>% 
-#  group_by(stars) %>%
-#  summarise(avg_num_rev = round(mean(review_count), digits =  2)) %>%
-#  tbl_df()
-
-#kable(dt, align  = "c")
+  ylab("Number of Reviews") + 
+  theme_classic()
 ```
 
 What can we make of the low mean number of reviews for 5 star restaurants? Perhaps that most 5 star restaurants are recieve that rating by chance; with a small sample size of 3 or 4 reviews, there will inevitably be a few restaurants that are rated 5 stars for each of those reviews. As the sample size (number of reviews) increases, the yelp rating will begin to approach this restaurants "true" rating, which will most likely not be 5 stars. The same probably occurs for 1 star restaurants as well, but there is an added consequence: if you are a 1 star restaurant, you probably won't be open for very long...
@@ -183,56 +317,67 @@ Where is our data coming from?
 all_restaurants$latlong <- paste(all_restaurants$latitude, all_restaurants$longitude, sep=":")
 counts <- all_restaurants %>% 
   group_by(loc) %>%
-  summarize(count = n(),  avg_rating = round(mean(stars),2))
+  summarize(Restaurants = n(),  Avg_Rating = round(mean(stars),2))
 
 locdata <- data.frame(latlong = all_restaurants$latlong, 
                       loc = all_restaurants$loc)
 
 counts <- inner_join(counts, locdata, by="loc") %>%
   group_by(loc) %>%
-  summarize(count = first(count), 
+  summarize(Restaurants = first(Restaurants), 
             latlong = first(latlong),
-            avg_rating = first(avg_rating))
+            Avg_Rating = first(Avg_Rating))
 
 require(datasets)
 
 USmap <- gvisGeoChart(counts, "loc", 
-                          sizevar="count",
-                          colorvar="avg_rating", 
+                          sizevar="Restaurants",
+                          colorvar="Avg_Rating", 
                           options=list(region = 'US',
                                        displayMode = "markers",
-                                       colorAxis="{colors:['white', 'red']}"))
+                                       colorAxis="{colors:['white', 'col="#c41200"']}"))
 
 Europemap <- gvisGeoChart(counts, "loc", 
-                          sizevar = "count",
-                          colorvar = "avg_rating", 
+                          sizevar = "Restaurants",
+                          colorvar = "Avg_Rating", 
                           options=list(region = '150',
                                        displayMode = "markers",
-                                       colorAxis="{colors:['white', 'red']}"))
+                                       colorAxis="{colors:['white', 'col="#c41200"']}"))
 
-plot(gvisMerge(USmap, Europemap, horizontal=TRUE))
+cat("<center>")
+print(gvisMerge(USmap, Europemap, horizontal=FALSE), "chart")
+cat("</center>")
 ```
 
-Finally, let's just see what cities have the best ratings. 
+Finally, let's get a sense of how the reviews vary by city.
 
 ```{r, echo=FALSE, fig.align='center'}
 dstate <- all_restaurants %>%
   group_by(loc) %>%
-  summarise(avg_stars = round(mean(stars), digits =  2), 
-            avg_num_rev = round(mean(reviewcount), digits =  2),
-            num_rest = n()) %>%
+  summarise(num_rest = n(),
+            avg_stars = round(mean(stars), digits =  2), 
+            avg_num_rev = round(mean(reviewcount), digits =  2)) %>%
   tbl_df()
 
 dstate <- dstate[order(-dstate$avg_stars),]
 
-kable(dstate, align  = "c")
+kable(dstate, col.names = c("City","Restaurants","Average Star Rating of Restaurants","Average Number of Ratings per Restaurant") , align  = "c")
+
+ggplot(dstate, aes(avg_num_rev, avg_stars, size=num_rest)) + 
+  geom_point(col="#c41200") + 
+  xlab("Average Number of Ratings per Restaurant") +
+  ylab("Average Star Rating of Restaurants") + 
+  scale_size_continuous(name  ="Restaurants") +
+  coord_flip()
 ```
+
+For the 10 cities given in this model, it would appear that the the average star rating will be larger if the average number of reviews by restaurant is lower. 
 
 ## LASSO Model
 
 Now we want to create a model that uses various bussiness attributes to predict the star rating of a restaurant. 
 
-The LASSO flavor of linear regession involves finding an ideal parameter in order to reduce possibility of overfitting. When fitting a linear regression, we are looking for the values $b_j$ that correspond to inputs $x_j$ and $\hat{y}$:
+The LASSO flavor of linear regession (Least Absolute Shrinkage and Selection Operator) involves finding an ideal parameter in order to reduce possibility of overfitting. When fitting a linear regression, we are looking for the values $b_j$ that correspond to inputs $x_j$ and $\hat{y}$:
 
 $$ \hat{y}~=~b_0~+~b_1x_1~+~...~+~b_kx_k . $$
 
@@ -244,21 +389,15 @@ so the sum of the magnitude of all of the coefficients cannot exceed the value o
 
 How do we find this value of $s$? It's a trade-off between the smallest error and the fewest number of variables. 
 
-As predictors, we'll most of the relevant variables included for \textit{restaurants} in the dataset. This includes categories (i.e. Chinese, American, Breakfast), the geographic location (city, neighborhood), attributes (parking, wifi). 
+As predictors, we'll most of the relevant variables included for \textit{restaurants} in the dataset. This includes categories (i.e. Chinese, American, Breakfast), the geographic location (city, neighborhood), and various attributes (parking, wifi, classy). 
 
 We'll examine the accuracy of this model by splitting the data set in half. The first half will be used to train the model that will be tested on the second half. 
 
 ```{r, echo=FALSE,  fig.align='center'}
 # Make dataset with predictors.
 dataset <- all_restaurants %>%
-  select(stars,
-         categories1, 
-         categories2,
-         categories3,
-         categories4,
-         categories5,
-         categories6,
-         categories7,
+  select(businessid,
+         stars,   
          city,
          price,
          alcohol,
@@ -281,7 +420,25 @@ dataset <- all_restaurants %>%
          late,
          desert,
          caters,
-         wifi)
+         wifi,
+         goodforkids,
+         tv,
+         romantic,
+         trendy,
+         upscale,
+         divey,
+         wheelchair,
+         bkgmusic,
+         livemusic,
+         byob,
+         dogsallowed,
+         open24hrs,
+         amex,
+         orderatcounter,
+         visa)
+
+dataset <- left_join(dataset, all_restaurants[c(1,119:length(all_restaurants))], by = "businessid")
+dataset <- subset(dataset, select = -businessid)
 
 # Define make predictors into a matrix.
 x <- model.matrix(stars ~ ., data = dataset)[,-1]
@@ -301,7 +458,7 @@ plot(lasso.mod)
 ```
 
 The plot above shows how the values of coefficients change for an increasing lasso parameter $s$ (x-axis).
-The key variables are the ones that ``jump out" early on. 
+The key variables are the ones that "jump out" early on. 
 
 Below we see the change in Mean-Squared Error ($\frac{1}{k}\sum{(y-\hat{y})^2}$) as a function of a changing $s$ (which is proportional to the $log(\lambda)$ at the bottom of the x-axis). The top of the x-axis shows the number of variables included in the model. We find the ideal $s$ value at the dip, where the mean-square value is the lowest.
 
@@ -331,14 +488,25 @@ ggplot(lasso, aes(jitter(y.act), pred)) +
   ylab("Predicted Star Ratings")
 ```
 
-The plot above compares the actual and the predicted results. The red line shows where a perfect predictions would fall, and the black points represent individual data points. Our model does a good job of capturing the overall trend of the star ratings, but fails to predict any outliers. Most predictions are between 4.5 and 2.5 stars, but fails to predict any outliers of 1, 2, or even 5 stars. But this sort of makes sense because most restaurants have ratings of 3.5 or 4 stars, as we saw at the very beginning. 
+The plot above compares the actual and the predicted results. The red line shows where a perfect predictions would fall, and the black points represent individual predictions. Our model does a good job of capturing the overall trend of the star ratings, but fails to predict any outliers. Most predictions are between 4.5 and 2.5 stars, but fails to predict any outliers of 1, 2, or even 5 stars. But this sort of makes sense because most restaurants have ratings of 3.5 or 4 stars, as we saw at the very beginning. 
 
 The largest coefficients are shown below:
 
 ```{r, echo=FALSE}
 out <- glmnet(x, y, alpha=1, lambda=grid)
-lasso.coef <- predict(out, type="coefficients", s=bestlam) [1:300,]
-tail(sort(lasso.coef),5)
-head(sort(lasso.coef),5)
+lasso.coef <- predict(out, type="coefficients", s=bestlam) [-1,] %>% data.frame()
+names(lasso.coef)[names(lasso.coef)=="row.names"] <- "Variable"
+names(lasso.coef)[names(lasso.coef)=="."] <- "Coefficient"
+lasso.coef$Coefficient <- round(as.numeric(lasso.coef$Coefficient), 3) 
+datatable(lasso.coef)
 ```
 
+Overall, we see that the top ten positive variables have to do with the location in the city, so I guess there is something to be said about the location. This could mean a wealthier neighborhood thus better quality food, or also that the population rates easier, or even that good restaurants tend to group together. Besides the location, categories like 'Latin American' 'French' 'Food'(?) and 'Vegan' tended to be better rated. Things that negatively impacted the rating were, again, categories like 'Buffets' 'Chicken Wings' 'Fast Food' or 'Burgers', but also things like a 'very loud' or a 'loud' noise levels, and (everyones least favorite) paid wifi.
+
+Also, it's worth noting that lack of responses tended to hurt a restaurants rating. When establishments failed to provide information (listed as 'dnr' = 'did not respond'), it means that consumers won't be making informed decisions, which could lead to a bad time and negative reviews. These were things like failing to answer whether or not a restaurant was 'upscale', whether dogs were allowed, or whether or not they served desert. Filling in these responses resulted in better ratings in every single category except 'drive-thru: TRUE', 'wifi: paid', 'delivery: TRUE', 'garage: TRUE', and 'open-late:TRUE'. 
+
+## Conclusion
+
+Our analysis isn't perfect, but then again, it wasn't meant to be perfect. We're trying to get a sense of the kinds of trends we see on the large scale, \textit{without} looking at the food quality. Of course there will be some shabby restaurants with excellent food, and other restaurants that have all the "attribute" boxes ticked but lack good food. Without the information on the food, we have focus on other attributes. What does the analysis on these attributes tell us?
+
+We'll if you're a restaurant owner, consider filling out all of your yelp attributes, since many restaurants were penalized for lack of responses. Next, is it possible to make your establishment quieter? Loud and very loud restaurants recieved lower ratings. Finally, if you're going to offer wifi, make if free or don't bother. 
