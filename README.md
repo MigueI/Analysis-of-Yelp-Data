@@ -6,7 +6,9 @@ food quality. But also other things. Things that might not be so obvious at firs
 restaurant attributes helped, hurt, or had no effect on, a restaurant's rating. 
 
 ![ScreenShot](https://raw.githubusercontent.com/MigueI/Analysis-of-Yelp-Data/master/Yelp_Analysis_files/figure-html/unnamed-chunk-4-1.png)
+
 The distribution of ratings of the restaurants included in the data set.
 
 ![ScreenShot](https://raw.githubusercontent.com/MigueI/Analysis-of-Yelp-Data/master/Yelp_Analysis_files/figure-html/unnamed-chunk-11-2.png)
+
 The predictions of the trained model on a test data set. Since we have no indication of the quality of the food, we don't expect the ratings to be perfect. Instead we're interested in matching the trend of most of the restaurants, which we see above. 
