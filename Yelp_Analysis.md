@@ -46,14 +46,14 @@ What can we make of the low mean number of reviews for 5 star restaurants? Perha
 Where is our data coming from?
 
 <!-- GeoChart generated in R 3.1.3 by googleVis 0.5.8 package -->
-<!-- Mon May 11 01:26:10 2015 -->
+<!-- Mon May 11 01:57:26 2015 -->
 
 
 <!-- jsHeader -->
 <script type="text/javascript">
  
 // jsData 
-function gvisDataGeoChartID107976e92f9f1 () {
+function gvisDataGeoChartID10875148173b4 () {
 var data = new google.visualization.DataTable();
 var datajson =
 [
@@ -117,7 +117,7 @@ return(data);
 
 
 // jsData 
-function gvisDataGeoChartID10797735775ed () {
+function gvisDataGeoChartID108753ed338f0 () {
 var data = new google.visualization.DataTable();
 var datajson =
 [
@@ -180,8 +180,8 @@ return(data);
 }
  
 // jsDrawChart
-function drawChartGeoChartID107976e92f9f1() {
-var data = gvisDataGeoChartID107976e92f9f1();
+function drawChartGeoChartID10875148173b4() {
+var data = gvisDataGeoChartID10875148173b4();
 var options = {};
 options["width"] =    556;
 options["height"] =    347;
@@ -190,7 +190,7 @@ options["displayMode"] = "markers";
 options["colorAxis"] = {colors:['white', '#c41200']};
 
     var chart = new google.visualization.GeoChart(
-    document.getElementById('GeoChartID107976e92f9f1')
+    document.getElementById('GeoChartID10875148173b4')
     );
     chart.draw(data,options);
     
@@ -200,8 +200,8 @@ options["colorAxis"] = {colors:['white', '#c41200']};
 
 
 // jsDrawChart
-function drawChartGeoChartID10797735775ed() {
-var data = gvisDataGeoChartID10797735775ed();
+function drawChartGeoChartID108753ed338f0() {
+var data = gvisDataGeoChartID108753ed338f0();
 var options = {};
 options["width"] =    556;
 options["height"] =    347;
@@ -210,7 +210,7 @@ options["displayMode"] = "markers";
 options["colorAxis"] = {colors:['white', '#c41200']};
 
     var chart = new google.visualization.GeoChart(
-    document.getElementById('GeoChartID10797735775ed')
+    document.getElementById('GeoChartID108753ed338f0')
     );
     chart.draw(data,options);
     
@@ -234,9 +234,9 @@ if (newPackage)
   pkgs.push(chartid);
   
 // Add the drawChart function to the global list of callbacks
-callbacks.push(drawChartGeoChartID107976e92f9f1);
+callbacks.push(drawChartGeoChartID10875148173b4);
 })();
-function displayChartGeoChartID107976e92f9f1() {
+function displayChartGeoChartID10875148173b4() {
   var pkgs = window.__gvisPackages = window.__gvisPackages || [];
   var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
   window.clearTimeout(window.__gvisLoad);
@@ -273,9 +273,9 @@ if (newPackage)
   pkgs.push(chartid);
   
 // Add the drawChart function to the global list of callbacks
-callbacks.push(drawChartGeoChartID10797735775ed);
+callbacks.push(drawChartGeoChartID108753ed338f0);
 })();
-function displayChartGeoChartID10797735775ed() {
+function displayChartGeoChartID108753ed338f0() {
   var pkgs = window.__gvisPackages = window.__gvisPackages || [];
   var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
   window.clearTimeout(window.__gvisLoad);
@@ -299,11 +299,11 @@ callbacks.shift()();
 </script>
  
 <!-- jsChart -->  
-<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID107976e92f9f1"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID10875148173b4"></script>
 
 
 <!-- jsChart -->  
-<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID10797735775ed"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID108753ed338f0"></script>
  
 <table border="0">
 <tr>
@@ -311,7 +311,7 @@ callbacks.shift()();
 
 <!-- divChart -->
   
-<div id="GeoChartID107976e92f9f1" 
+<div id="GeoChartID10875148173b4" 
   style="width: 556; height: 347;">
 </div>
 
@@ -320,7 +320,7 @@ callbacks.shift()();
 
 <!-- divChart -->
   
-<div id="GeoChartID10797735775ed" 
+<div id="GeoChartID108753ed338f0" 
   style="width: 556; height: 347;">
 </div>
 
@@ -365,7 +365,7 @@ so the sum of the magnitude of all of the coefficients cannot exceed the value o
 
 How do we find this value of $s$? It's a trade-off between the smallest error and the fewest number of variables. 
 
-As predictors, we'll most of the relevant variables included for \textit{restaurants} in the dataset. This includes categories (i.e. Chinese, American, Breakfast), the geographic location (city, neighborhood), and various attributes (parking, wifi, classy). 
+As predictors, we'll most of the relevant variables included for restaurants in the dataset. This includes categories (i.e. Chinese, American, Breakfast), the geographic location (city, neighborhood), and various attributes (parking, wifi, classy). 
 
 We'll examine the accuracy of this model by splitting the data set in half. The first half will be used to train the model that will be tested on the second half. 
 
@@ -380,7 +380,11 @@ Below we see the change in Mean-Squared Error ($\frac{1}{k}\sum{(y-\hat{y})^2}$)
 
 The plot above compares the actual and the predicted results. The red line shows where a perfect predictions would fall, and the black points represent individual predictions. Our model does a good job of capturing the overall trend of the star ratings, but fails to predict any outliers. Most predictions are between 4.5 and 2.5 stars, but fails to predict any outliers of 1, 2, or even 5 stars. But this sort of makes sense because most restaurants have ratings of 3.5 or 4 stars, as we saw at the very beginning. 
 
-The largest coefficients are shown below:
+<img src="Yelp_Analysis_files/figure-html/unnamed-chunk-12-1.png" title="" alt="" style="display: block; margin: auto;" />
+
+Compared to the first histogram showing the distribution of all of the ratings, the histogram made from our predicted model has a much sharper peak.
+
+The largest coefficients are shown in the table below:
 
 <!--html_preserve--><div id="htmlwidget-5469" style="width:100%;height:auto;" class="datatables"></div>
 <script type="application/json" data-for="htmlwidget-5469">{
@@ -414,8 +418,15 @@ Overall, we see that the top ten positive variables have to do with the location
 
 Also, it's worth noting that lack of responses tended to hurt a restaurants rating. When establishments failed to provide information (listed as 'dnr' = 'did not respond'), it means that consumers won't be making informed decisions, which could lead to a bad time and negative reviews. These were things like failing to answer whether or not a restaurant was 'upscale', whether dogs were allowed, or whether or not they served desert. Filling in these responses resulted in better ratings in every single category except 'drive-thru: TRUE', 'wifi: paid', 'delivery: TRUE', 'garage: TRUE', and 'open-late:TRUE'. 
 
-## Conclusion
+## Conclusions
 
-Our analysis isn't perfect, but then again, it wasn't meant to be perfect. We're trying to get a sense of the kinds of trends we see on the large scale, \textit{without} looking at the food quality. Of course there will be some shabby restaurants with excellent food, and other restaurants that have all the "attribute" boxes ticked but lack good food. Without the information on the food, we have focus on other attributes. What does the analysis on these attributes tell us?
+Our analysis isn't perfect, but then again, it wasn't meant to be perfect. We're trying to get a sense of the kinds of trends we see on the large scale, without looking at the food quality. Of course there will be some shabby restaurants with excellent food, and other restaurants that have all the "attribute" boxes ticked but lack good food. Without the information on the food, we have focus on other attributes. What does the analysis on these attributes tell us?
 
-We'll if you're a restaurant owner, consider filling out all of your yelp attributes, since many restaurants were penalized for lack of responses. Next, is it possible to make your establishment quieter? Loud and very loud restaurants recieved lower ratings. Finally, if you're going to offer wifi, make if free or don't bother. 
+We'll if you're a restaurant owner, consider filling out all of your yelp attributes, since many restaurants were penalized for lack of responses. Next, is it possible to make your establishment quieter? Loud and very loud restaurants recieved lower ratings. If you're going to offer wifi, make if free or don't bother. Finally, if you are thinking about opening a restaurant, take great care in where you choose to set up shop. Location (i.e. neighborhood) can play a major role in a restaurants ratings.
+
+
+It's important to keep in mind that correlation isn't causation, and that just because we see differences between attributes doesn't necessarily mean that fixing certain problems will immediatly yield better ratings. On the other hand, making some of the improvements outlined above certainly won't make ratings worse!
+
+## Acknowledgments 
+
+I'd like to thank Albert for helping me with this project, and for teaching me R and introducing me to statistics. I'd also like to thank Yelp for publishing the data set. 

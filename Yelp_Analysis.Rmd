@@ -9,7 +9,7 @@ output:
 
 We've all been there. It's 7:00 PM, you're in an unfamiliar part of town with some friends, and everyone's hungry but nobody can decide where to eat. Everyone pulls out their phones to see what's nearby, but being the snobs you are, you guys can't just pick any restaurant. You need something solid. At the very least 4 stars. Eventually you narrow it down to a couple of 4 star restaurants and one 4.5 star restaurant. In the end, you all go with the 4.5 star restaurant, since it's presumably the best. 
 
-In our review-obsessed culture, we often look to the internet for decisions. When finding a place to eat, we want a single number that makes our decision easy. But at the end of the day, what is the difference between a 4 star restaurant and a 4.5 star restaurant? We'd assume that the quality of food is central to this rating, but what other factors play a role in a restaurants rating? In this analysis, my goal is to make a linear model to see how various attributes of a restaurant affect it's ratings on Yelp. Ideally, this information could be used to help restaurant owners discover what sorts of attributes will make the customers experience better.
+In our review-obsessed culture, we often look to the internet for decisions. When finding a place to eat, we want a single number that makes our decision easy. But at the end of the day, what is the difference between a 4 star restaurant and a 4.5 star restaurant? We'd assume that the quality of food is central to this rating, but what other factors play a role in a restaurants rating? In this analysis, my goal is to make a linear model to see how various attributes of a restaurant affect it's ratings on Yelp. Ideally, this information could be used to help restaurant owners discover what sorts of attributes will make the customer's experience better.
 
 ## Overview
 
@@ -392,7 +392,7 @@ so the sum of the magnitude of all of the coefficients cannot exceed the value o
 
 How do we find this value of $s$? It's a trade-off between the smallest error and the fewest number of variables. 
 
-As predictors, we'll most of the relevant variables included for \textit{restaurants} in the dataset. This includes categories (i.e. Chinese, American, Breakfast), the geographic location (city, neighborhood), and various attributes (parking, wifi, classy). 
+As predictors, we'll most of the relevant variables included for restaurants in the dataset. This includes categories (i.e. Chinese, American, Breakfast), the geographic location (city, neighborhood), and various attributes (parking, wifi, classy). 
 
 We'll examine the accuracy of this model by splitting the data set in half. The first half will be used to train the model that will be tested on the second half. 
 
@@ -491,11 +491,23 @@ ggplot(lasso, aes(jitter(y.act), pred)) +
   coord_cartesian(ylim = c(1,5)) +
   xlab("Actual Star Ratings") +
   ylab("Predicted Star Ratings")
+
+
 ```
 
 The plot above compares the actual and the predicted results. The red line shows where a perfect predictions would fall, and the black points represent individual predictions. Our model does a good job of capturing the overall trend of the star ratings, but fails to predict any outliers. Most predictions are between 4.5 and 2.5 stars, but fails to predict any outliers of 1, 2, or even 5 stars. But this sort of makes sense because most restaurants have ratings of 3.5 or 4 stars, as we saw at the very beginning. 
 
-The largest coefficients are shown below:
+```{r, echo=FALSE, fig.align='center'}
+ggplot(lasso, aes(as.factor(round(pred*2)/2))) + 
+  geom_histogram(fill = "#c41200", col="black") +
+  xlab("Predicted Stars") +
+  ylab("Number of Restaurants") +
+  theme_classic()
+```
+
+Compared to the first histogram showing the distribution of all of the ratings, the histogram made from our predicted model has a much sharper peak.
+
+The largest coefficients are shown in the table below:
 
 ```{r, echo=FALSE}
 out <- glmnet(x, y, alpha=1, lambda=grid)
@@ -510,8 +522,15 @@ Overall, we see that the top ten positive variables have to do with the location
 
 Also, it's worth noting that lack of responses tended to hurt a restaurants rating. When establishments failed to provide information (listed as 'dnr' = 'did not respond'), it means that consumers won't be making informed decisions, which could lead to a bad time and negative reviews. These were things like failing to answer whether or not a restaurant was 'upscale', whether dogs were allowed, or whether or not they served desert. Filling in these responses resulted in better ratings in every single category except 'drive-thru: TRUE', 'wifi: paid', 'delivery: TRUE', 'garage: TRUE', and 'open-late:TRUE'. 
 
-## Conclusion
+## Conclusions
 
-Our analysis isn't perfect, but then again, it wasn't meant to be perfect. We're trying to get a sense of the kinds of trends we see on the large scale, \textit{without} looking at the food quality. Of course there will be some shabby restaurants with excellent food, and other restaurants that have all the "attribute" boxes ticked but lack good food. Without the information on the food, we have focus on other attributes. What does the analysis on these attributes tell us?
+Our analysis isn't perfect, but then again, it wasn't meant to be perfect. We're trying to get a sense of the kinds of trends we see on the large scale, without looking at the food quality. Of course there will be some shabby restaurants with excellent food, and other restaurants that have all the "attribute" boxes ticked but lack good food. Without the information on the food, we have focus on other attributes. What does the analysis on these attributes tell us?
 
-We'll if you're a restaurant owner, consider filling out all of your yelp attributes, since many restaurants were penalized for lack of responses. Next, is it possible to make your establishment quieter? Loud and very loud restaurants recieved lower ratings. Finally, if you're going to offer wifi, make if free or don't bother. 
+We'll if you're a restaurant owner, consider filling out all of your yelp attributes, since many restaurants were penalized for lack of responses. Next, is it possible to make your establishment quieter? Loud and very loud restaurants recieved lower ratings. If you're going to offer wifi, make if free or don't bother. Finally, if you are thinking about opening a restaurant, take great care in where you choose to set up shop. Location (i.e. neighborhood) can play a major role in a restaurants ratings.
+
+
+It's important to keep in mind that correlation isn't causation, and that just because we see differences between attributes doesn't necessarily mean that fixing certain problems will immediatly yield better ratings. On the other hand, making some of the improvements outlined above certainly won't make ratings worse!
+
+## Acknowledgments 
+
+I'd like to thank Albert for helping me with this project, and for teaching me R and introducing me to statistics. I'd also like to thank Yelp for publishing the data set. 
