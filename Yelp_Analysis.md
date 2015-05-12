@@ -4,7 +4,7 @@
 
 We've all been there. It's 7:00 PM, you're in an unfamiliar part of town with some friends, and everyone's hungry but nobody can decide where to eat. Everyone pulls out their phones to see what's nearby, but being the snobs you are, you guys can't just pick any restaurant. You need something solid. At the very least 4 stars. Eventually you narrow it down to a couple of 4 star restaurants and one 4.5 star restaurant. In the end, you all go with the 4.5 star restaurant, since it's presumably the best. 
 
-In our review-obsessed culture, we often look to the internet for decisions. When finding a place to eat, we want a single number that makes our decision easy. But at the end of the day, what is the difference between a 4 star restaurant and a 4.5 star restaurant? We'd assume that the quality of food is central to this rating, but what other factors play a role in a restaurants rating? In this analysis, my goal is to make a linear model to see how various attributes of a restaurant affect it's ratings on Yelp. Ideally, this information could be used to help restaurant owners discover what sorts of attributes will make the customers experience better.
+In our review-obsessed culture, we often look to the internet for decisions. When finding a place to eat, we want a single number that makes our decision easy. But at the end of the day, what is the difference between a 4 star restaurant and a 4.5 star restaurant? We'd assume that the quality of food is central to this rating, but what other factors play a role in a restaurants rating? In this analysis, my goal is to make a linear model to see how various attributes of a restaurant affect it's ratings on Yelp. Ideally, this information could be used to help restaurant owners discover what sorts of attributes will make the customer's experience better.
 
 ## Overview
 
@@ -46,14 +46,14 @@ What can we make of the low mean number of reviews for 5 star restaurants? Perha
 Where is our data coming from?
 
 <!-- GeoChart generated in R 3.1.3 by googleVis 0.5.8 package -->
-<!-- Mon May 11 01:57:26 2015 -->
+<!-- Mon May 11 18:38:25 2015 -->
 
 
 <!-- jsHeader -->
 <script type="text/javascript">
  
 // jsData 
-function gvisDataGeoChartID10875148173b4 () {
+function gvisDataGeoChartID1143c1ee12784 () {
 var data = new google.visualization.DataTable();
 var datajson =
 [
@@ -117,7 +117,7 @@ return(data);
 
 
 // jsData 
-function gvisDataGeoChartID108753ed338f0 () {
+function gvisDataGeoChartID1143c4fe95af2 () {
 var data = new google.visualization.DataTable();
 var datajson =
 [
@@ -180,8 +180,8 @@ return(data);
 }
  
 // jsDrawChart
-function drawChartGeoChartID10875148173b4() {
-var data = gvisDataGeoChartID10875148173b4();
+function drawChartGeoChartID1143c1ee12784() {
+var data = gvisDataGeoChartID1143c1ee12784();
 var options = {};
 options["width"] =    556;
 options["height"] =    347;
@@ -190,7 +190,7 @@ options["displayMode"] = "markers";
 options["colorAxis"] = {colors:['white', '#c41200']};
 
     var chart = new google.visualization.GeoChart(
-    document.getElementById('GeoChartID10875148173b4')
+    document.getElementById('GeoChartID1143c1ee12784')
     );
     chart.draw(data,options);
     
@@ -200,8 +200,8 @@ options["colorAxis"] = {colors:['white', '#c41200']};
 
 
 // jsDrawChart
-function drawChartGeoChartID108753ed338f0() {
-var data = gvisDataGeoChartID108753ed338f0();
+function drawChartGeoChartID1143c4fe95af2() {
+var data = gvisDataGeoChartID1143c4fe95af2();
 var options = {};
 options["width"] =    556;
 options["height"] =    347;
@@ -210,7 +210,7 @@ options["displayMode"] = "markers";
 options["colorAxis"] = {colors:['white', '#c41200']};
 
     var chart = new google.visualization.GeoChart(
-    document.getElementById('GeoChartID108753ed338f0')
+    document.getElementById('GeoChartID1143c4fe95af2')
     );
     chart.draw(data,options);
     
@@ -234,9 +234,9 @@ if (newPackage)
   pkgs.push(chartid);
   
 // Add the drawChart function to the global list of callbacks
-callbacks.push(drawChartGeoChartID10875148173b4);
+callbacks.push(drawChartGeoChartID1143c1ee12784);
 })();
-function displayChartGeoChartID10875148173b4() {
+function displayChartGeoChartID1143c1ee12784() {
   var pkgs = window.__gvisPackages = window.__gvisPackages || [];
   var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
   window.clearTimeout(window.__gvisLoad);
@@ -273,9 +273,9 @@ if (newPackage)
   pkgs.push(chartid);
   
 // Add the drawChart function to the global list of callbacks
-callbacks.push(drawChartGeoChartID108753ed338f0);
+callbacks.push(drawChartGeoChartID1143c4fe95af2);
 })();
-function displayChartGeoChartID108753ed338f0() {
+function displayChartGeoChartID1143c4fe95af2() {
   var pkgs = window.__gvisPackages = window.__gvisPackages || [];
   var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
   window.clearTimeout(window.__gvisLoad);
@@ -299,11 +299,11 @@ callbacks.shift()();
 </script>
  
 <!-- jsChart -->  
-<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID10875148173b4"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID1143c1ee12784"></script>
 
 
 <!-- jsChart -->  
-<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID108753ed338f0"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartGeoChartID1143c4fe95af2"></script>
  
 <table border="0">
 <tr>
@@ -311,7 +311,7 @@ callbacks.shift()();
 
 <!-- divChart -->
   
-<div id="GeoChartID10875148173b4" 
+<div id="GeoChartID1143c1ee12784" 
   style="width: 556; height: 347;">
 </div>
 
@@ -320,7 +320,7 @@ callbacks.shift()();
 
 <!-- divChart -->
   
-<div id="GeoChartID108753ed338f0" 
+<div id="GeoChartID1143c4fe95af2" 
   style="width: 556; height: 347;">
 </div>
 

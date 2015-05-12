@@ -470,7 +470,7 @@ Below we see the change in Mean-Squared Error ($\frac{1}{k}\sum{(y-\hat{y})^2}$)
 ```{r, echo=FALSE, fig.align='center'}
 set.seed(1)
 cv.out <- cv.glmnet(x[train,], y[train], alpha=1)
-plot(cv.out)
+plot.cv.glmnet(cv.out)
 bestlam <- cv.out$lambda.min
 
 
@@ -481,16 +481,19 @@ lasso$y.act <- lasso$y.act %>%
 lasso$pred <- predict(lasso.mod, s=bestlam, newx=x[test,])  %>%
   as.character() %>%
   as.numeric()
-# mean((lasso$pred -y.test)^2)
+
+# R-squared value estimate
+# 1-(mean((lasso$pred -y.test)^2)/var(y.test))
 
 # Plot of actual vs. predicted values for the test data set.
 ggplot(lasso, aes(jitter(y.act), pred)) + 
   geom_point() + 
-  geom_smooth(method = "lm") + 
-  geom_abline(intercept = 0, colour = "#c41200", size = 2) +
+  geom_smooth(method = "lm", col = "#c41200") + 
+  geom_abline(intercept = 0, col = "#c41200", size = 2) +
   coord_cartesian(ylim = c(1,5)) +
   xlab("Actual Star Ratings") +
-  ylab("Predicted Star Ratings")
+  ylab("Predicted Star Ratings") + 
+  theme_classic()
 
 
 ```
@@ -502,6 +505,7 @@ ggplot(lasso, aes(as.factor(round(pred*2)/2))) +
   geom_histogram(fill = "#c41200", col="black") +
   xlab("Predicted Stars") +
   ylab("Number of Restaurants") +
+  coord_cartesian(xlim=c(-1,7.5)) +
   theme_classic()
 ```
 
